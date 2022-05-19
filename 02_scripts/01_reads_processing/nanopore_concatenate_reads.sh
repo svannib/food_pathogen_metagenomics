@@ -21,28 +21,29 @@
 ml purge
 ml BBMap/38.91-foss-2018b
 
-# Declare working directory and sample batc as variables
+# Declare working directory and sample batch as variables
 folder=/scicore/home/egliadr/GROUP/projects/food_pathogen_metagenomics_VB
 batch=library_prep_test_VB
+run=20220325_run_1
 
 # Declare sample name and corresponding multiplexing barcode
 sample_id=(BS_Z1 BS_Z2 BS_Z3 CC_Z1 CC_Z2 CC_Z3 HMW)
 barcodes=(barcode02 barcode03 barcode04 barcode05 barcode06 barcode07 barcode08)
 
 #generate a new folder where the concatenated reads will be stored
-mkdir $folder/01_data/"$batch"/concatenated_reads/
+mkdir -p $folder/01_data/"$batch"/"$run"/concatenated_reads/
 
 # Loop trough the samples
 for (( i=0; i<${#sample_id[@]}; i++ ))
 do echo "Reads with "${barcodes[$i]}" concatenated in sample: "${sample_id[$i]}""
 
-# Generate a folder for each sample and concateate fastq reads there
-mkdir $folder/01_data/"$batch"/concatenated_reads/"${sample_id[$i]}"
-zcat $folder/01_data/"$batch"/fastq_pass/${barcodes[$i]}/*.gz \
->> $folder/01_data/"$batch"/concatenated_reads/"${sample_id[$i]}"/"${sample_id[$i]}".fastq
+# Generate a folder for each sample and concatenate fastq reads there
+mkdir $folder/01_data/"$batch"/"$run"/concatenated_reads/"${sample_id[$i]}"
+zcat $folder/01_data/"$batch"/"$run"/fastq_pass/${barcodes[$i]}/*.gz \
+>> $folder/01_data/"$batch"/"$run"/concatenated_reads/"${sample_id[$i]}"/"${sample_id[$i]}".fastq
 
 # Convert the .fastq file to a .fasta
-reformat.sh -Xmx4g in=$folder/01_data/"$batch"/concatenated_reads/"${sample_id[$i]}"/"${sample_id[$i]}".fastq \
-out=$folder/01_data/"$batch"/concatenated_reads/"${sample_id[$i]}"/"${sample_id[$i]}".fasta qin=33
+reformat.sh -Xmx4g in=$folder/01_data/"$batch"/"$run"/concatenated_reads/"${sample_id[$i]}"/"${sample_id[$i]}".fastq \
+out=$folder/01_data/"$batch"/"$run"/concatenated_reads/"${sample_id[$i]}"/"${sample_id[$i]}".fasta qin=33
 
 done
