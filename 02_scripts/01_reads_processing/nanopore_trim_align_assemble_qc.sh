@@ -6,7 +6,7 @@
 
 #SBATCH --time=24:00:00        #This is the time that your task will run
 #SBATCH --qos=1day           #You will run in this queue
-#SBATCH --array=1-7
+#SBATCH --array=1-6
 
 # Paths to STDOUT or STDERR files should be absolute or relative to current working directory
 #SBATCH --output=slurm_nanopore_trim_align_assemble_polish     #This is the joined STDOUT and STDERR file
@@ -28,13 +28,13 @@ source /scicore/home/egliadr/benven0001/miniconda3/etc/profile.d/conda.sh
 conda activate reads_processing
 
 # Define array of samples
-array=(mock BS_Z1 BS_Z2 BS_Z3 CC_Z1 CC_Z2 CC_Z3 HMW)
+array=(mock A0CC A0F A1CC A1F REF0CC REF0F)
 export sample_id=${array["$SLURM_ARRAY_TASK_ID"]}
 
 # Indicate path to working directory, sample batch and raw reads
-folder=/scicore/home/egliadr/GROUP/projects/food_pathogen_metagenomics_VB
-batch=library_prep_test_VB
-run=20220325_run_1
+folder=/scicore/home/egliadr/GROUP/projects/food_pathogen_metagenomics
+batch=dna_extraction_test
+run=20220519_run1
 rawdata="$folder"/01_data/"$batch"/"$run"/concatenated_reads/"$sample_id"/"$sample_id".fastq #raw data fastq format
 fasta="$folder"/01_data/"$batch"/"$run"/concatenated_reads/"$sample_id"/"$sample_id".fasta
 
@@ -48,10 +48,10 @@ echo "Pipeline started for $sample_id" `date` > $sample_id.log
 echo "Adapter trimming started" `date` >> $sample_id.log
 
 # Adapter trimming, porechop takes 10'000 as samples to check adapter sets. Internal adapters will also be removed with --discard_middle.
-porechop -t "$SLURM_CPUS_PER_TASK" -i $rawdata -o "$sample_id"_trim.fastq --discard_middle
+#porechop -t "$SLURM_CPUS_PER_TASK" -i $rawdata -o "$sample_id"_trim.fastq --discard_middle
 
 # Create a new directory and store results from nanoplot read QC there
-mkdir nanoplot_trimmed_reads
+mkdir -p nanoplot_trimmed_reads
 NanoPlot --fastq "$sample_id"_trim.fastq -o nanoplot_trimmed_reads/
 
 echo "Adapter trimming end" `date` >> $sample_id.log
@@ -61,7 +61,7 @@ echo "Host Removal started" `date` >> "$sample_id".log
 
 # Map reads to reference host genome with minimap2
 minimap2 -ax map-ont \
-"$folder"/01_data/reference_genomes/GCF_000001405.40_GRCh38.p14_genomic.fna.gz \
+"$folder"/01_data/reference_genomes/GCF_016699485.2_bGalGal1.mat.broiler.GRCg7b_genomic.fna.gz \
 "$sample_id"_trim.fastq > "$sample_id".sam
 
 conda activate samtools
@@ -80,6 +80,11 @@ rm "$sample_id"_unmapped.bam "$sample_id".sam "$sample_id".bam
 # picard is used to convert .BAM alignment files back to a fastq
 picard SamToFastq -I "$sample_id"_sorted_unmapped.bam -F "$sample_id"_UC_picard.fastq
 
+# Run nanoplot again on the reads not aligned to the reference genome
+conda activate reads_processing
+mkdir -p nanoplot_trimmed_prokaryotic_reads
+NanoPlot --fastq "$sample_id"_UC_picard.fastq -o nanoplot_trimmed_prokaryotic_reads
+
 echo "Host Removal completed" `date`>> "$sample_id".log
 
 #De novo assembly using flye----------------------------------------------------------------------------------------------------
@@ -90,7 +95,7 @@ mkdir -p "$folder"/03_results/"$batch"/"$run"/assemblies/"$sample_id"/
 cd "$folder"/03_results/"$batch"/"$run"/assemblies/"$sample_id"/
 
 conda activate flye
-flye --nano-raw "$folder"/01_data/"$batch"/trimmed_reads/"$sample_id"/"$run"/"$sample_id"_UC_picard.fastq  \
+flye --nano-raw "$folder"/01_data/"$batch"/"$run"/trimmed_reads/"$sample_id"/"$sample_id"_UC_picard.fastq  \
 --out-dir "$sample_id".flye.assembly --threads "$SLURM_CPUS_PER_TASK" --meta
 
 echo "#Assembly completed" `date` >> "$sample_id".log
@@ -118,7 +123,7 @@ echo "QUAST QC started" `date` >> "$sample_id".log
 conda activate quast
 
 cd "$folder"/03_results/"$batch"/"$run"/assemblies/"$sample_id"
-mkdir quast_reports
+mkdir -p quast_reports
 
 python /scicore/home/egliadr/benven0001/miniconda3/envs/quast/bin/metaquast.py -o ./quast_reports \
 -r "$folder"/01_data/reference_genomes/ZymoBIOMICS.STD.refseq.v2/Genomes/ "$sample_id".flye.assembly/assembly.fasta

@@ -1,4 +1,5 @@
 #!/bin/bash
+#boop
 #SBATCH --job-name=nanopore_concatenate_reads       #This is the name of your job
 #SBATCH --cpus-per-task=4                 #This is the number of cores reserved
 #SBATCH --mem-per-cpu=8G              #This is the memory reserved per core.
