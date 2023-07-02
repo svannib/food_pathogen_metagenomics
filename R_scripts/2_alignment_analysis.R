@@ -66,7 +66,7 @@ alignments$meandepth <- as.numeric(alignments$meandepth)
 alignments <- alignments[!(grepl("^1", alignments$sample_col) & (alignments$species %in% c("Klebsiella_michiganensis", "Staphylococcus_lugdunensis"))), ]
 alignments$genetic_element <- gsub("genome", "chromosome", alignments$genetic_element)
 
-#write_csv(alignments, "/Users/vbenvenga/Desktop/master_vanni/food_patogen_metagenomics/1. alignments/01_raw_alignments/Alignment_coverage_depth_processed.csv")
+write_csv(alignments, "/Users/vbenvenga/Desktop/master_vanni/food_patogen_metagenomics/1. alignments/01_raw_alignments/Alignment_coverage_depth_processed.csv")
 
 # -----------------------------------------------------------------------------
 
