@@ -1,3 +1,4 @@
-# food_pathogen_metagenomics
+# Food Pathogen Metagenomics #
+## Exploring the potential of Nanopore shotgun metagenomics in the context of food safety ##
 
-readme readme
+Code repository for ZHAW ACLS Thesis
